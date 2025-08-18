@@ -640,6 +640,11 @@ class Vanagon
        %('#{@platform.tar}' -cf - #{tar_root}/ | gzip -9c > #{tar_root}.tar.gz)].join("\n\t")
     end
 
+    def sudo_bin
+      sudo_path = `sh -c 'command -v sudo'`.strip
+      return sudo_path
+    end
+
     # Evaluates the makefile template and writes the contents to the workdir
     # for use in building the project
     #

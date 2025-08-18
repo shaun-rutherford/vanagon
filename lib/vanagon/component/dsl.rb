@@ -163,11 +163,6 @@ class Vanagon
         @component.conflicts << OpenStruct.new(:pkgname => pkgname, :version => version)
       end
 
-      def sudo_bin
-        sudo_path = `sh -c 'command -v sudo'`.strip
-        return sudo_path
-      end
-
       # install_service adds the commands to install the various files on
       # disk during the package build and registers the service with the project
       #
