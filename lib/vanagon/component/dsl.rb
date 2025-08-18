@@ -163,6 +163,11 @@ class Vanagon
         @component.conflicts << OpenStruct.new(:pkgname => pkgname, :version => version)
       end
 
+      def sudo_bin
+        sudo_path = `sh -c 'command -v sudo'`.strip
+        return sudo_path
+      end
+
       # install_service adds the commands to install the various files on
       # disk during the package build and registers the service with the project
       #
@@ -220,14 +225,14 @@ class Vanagon
 
         # Install the service and default files
         if options[:link_target]
-          sudo_install_file(service_file, options[:link_target], mode: target_mode)
+          install_file(service_file, options[:link_target], mode: target_mode, sudo: true)
           link options[:link_target], target_service_file
         else
-          sudo_install_file(service_file, target_service_file, mode: target_mode)
+          install_file(service_file, target_service_file, mode: target_mode, sudo: true)
         end
 
         if default_file
-          sudo_install_file(default_file, target_default_file, mode: default_mode)
+          install_file(default_file, target_default_file, mode: default_mode, sudo: true)
           configfile target_default_file
         end
 
@@ -236,36 +241,21 @@ class Vanagon
                                              :type => options[:service_type], :init_system => init_system)
       end
 
-      # Copies a file from source to target during the install phase of the component using sudo
-      # Used for times when we need to install files to elevated locations such as service files
-      # @param source [String] path to the file to copy
-      # @param target [String] path to the desired target of the file
-      # @param owner  [String] owner of the file
-      # @param group  [String] group owner of the file
-      def sudo_install_file(source, target, mode: nil, owner: nil, group: nil) # rubocop:disable Metrics/AbcSize
-        @component.install << "sudo #{@component.platform.install} -d '#{File.dirname(target)}'"
-        @component.install << "sudo #{@component.platform.copy} -p '#{source}' '#{target}'"
-
-        if @component.platform.is_windows?
-          unless mode.nil? && owner.nil? && group.nil?
-            VanagonLogger.info "You're trying to set the mode, owner, or group for windows. I don't know how to do that, ignoring!"
-          end
-        else
-          mode ||= '0644'
-          @component.install << "sudo chmod #{mode} '#{target}'"
-        end
-        @component.add_file Vanagon::Common::Pathname.file(target, mode: mode, owner: owner, group: group)
-      end
-
       # Copies a file from source to target during the install phase of the component
       #
       # @param source [String] path to the file to copy
       # @param target [String] path to the desired target of the file
       # @param owner  [String] owner of the file
       # @param group  [String] group owner of the file
-      def install_file(source, target, mode: nil, owner: nil, group: nil) # rubocop:disable Metrics/AbcSize
-        @component.install << "#{@component.platform.install} -d '#{File.dirname(target)}'"
-        @component.install << "#{@component.platform.copy} -p '#{source}' '#{target}'"
+      # @param sudo   [Boolean] whether to use sudo to create the file and set mode
+      def install_file(source, target, mode: nil, owner: nil, group: nil, sudo: false) # rubocop:disable Metrics/AbcSize
+        if sudo == true
+          @component.install << "#{sudo_bin} #{@component.platform.install} -d '#{File.dirname(target)}'"
+          @component.install << "#{sudo_bin} #{@component.platform.copy} -p '#{source}' '#{target}'"
+        else
+          @component.install << "#{@component.platform.install} -d '#{File.dirname(target)}'"
+          @component.install << "#{@component.platform.copy} -p '#{source}' '#{target}'"
+        end
 
         if @component.platform.is_windows?
           unless mode.nil? && owner.nil? && group.nil?
@@ -273,7 +263,11 @@ class Vanagon
           end
         else
           mode ||= '0644'
-          @component.install << "sudo chmod #{mode} '#{target}'"
+          if sudo == true
+            @component.install << "#{sudo_bin} chmod #{mode} '#{target}'"
+          else
+            @component.install << "chmod #{mode} '#{target}'"
+          end
         end
         @component.add_file Vanagon::Common::Pathname.file(target, mode: mode, owner: owner, group: group)
       end
