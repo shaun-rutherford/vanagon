@@ -245,8 +245,8 @@ class Vanagon
       # @param sudo   [Boolean] whether to use sudo to create the file and set mode
       def install_file(source, target, mode: nil, owner: nil, group: nil, sudo: false) # rubocop:disable Metrics/AbcSize
         if sudo == true
-          @component.install << "sudo #{@component.platform.install} -d '#{File.dirname(target)}'"
-          @component.install << "sudo #{@component.platform.copy} -p '#{source}' '#{target}'"
+          @component.install << "#{sudo_bin} #{@component.platform.install} -d '#{File.dirname(target)}'"
+          @component.install << "#{sudo_bin} #{@component.platform.copy} -p '#{source}' '#{target}'"
         else
           @component.install << "#{@component.platform.install} -d '#{File.dirname(target)}'"
           @component.install << "#{@component.platform.copy} -p '#{source}' '#{target}'"
@@ -259,7 +259,7 @@ class Vanagon
         else
           mode ||= '0644'
           if sudo == true
-            @component.install << "sudo chmod #{mode} '#{target}'"
+            @component.install << "#{sudo_bin} chmod #{mode} '#{target}'"
           else
             @component.install << "chmod #{mode} '#{target}'"
           end
