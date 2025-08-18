@@ -550,7 +550,7 @@ class Vanagon
         "mkdir #{archive_directory}",
         "gunzip -c #{name_and_version}.tar.gz | '#{tar}' -C #{archive_directory} -xf -",
         "rm #{name_and_version}.tar.gz",
-        "cd #{archive_directory}/#{name_and_version}; #{bill_of_materials_command}; #{sudo_bin} chown -R 0:0 #{archive_directory}; #{tar} cf ../../#{name_and_version_and_platform}.tar *",
+        "cd #{archive_directory}/#{name_and_version}; #{bill_of_materials_command}; sudo chown -R 0:0 #{archive_directory}; #{tar} cf ../../#{name_and_version_and_platform}.tar *",
         "gzip -9c #{name_and_version_and_platform}.tar > #{name_and_version_and_platform}.tar.gz",
         "cp build_metadata.#{name_and_platform}.json output/#{name_and_version_and_platform}.json",
         "cp bill-of-materials output/#{name_and_version_and_platform}-bill-of-materials ||:",
